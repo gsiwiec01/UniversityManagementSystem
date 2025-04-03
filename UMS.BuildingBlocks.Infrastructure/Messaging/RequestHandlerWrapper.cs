@@ -1,4 +1,5 @@
-﻿using UMS.BuildingBlocks.Application.Messaging;
+﻿using Microsoft.Extensions.DependencyInjection;
+using UMS.BuildingBlocks.Application.Messaging;
 using UMS.BuildingBlocks.Application.Messaging.Requests;
 
 namespace UMS.BuildingBlocks.Infrastructure.Messaging;
@@ -8,12 +9,11 @@ internal class RequestHandlerWrapper<TRequest, TResponse> : IRequestHandlerWrapp
 {
     private readonly IRequestHandler<TRequest, TResponse> _requestHandler;
     private readonly IEnumerable<IRequestPipeline<TRequest, TResponse>> _pipelines;
-
-    public RequestHandlerWrapper(IRequestHandler<TRequest, TResponse> requestHandler,
-        IEnumerable<IRequestPipeline<TRequest, TResponse>> pipelines)
+    
+    public RequestHandlerWrapper(IServiceProvider serviceProvider)
     {
-        _requestHandler = requestHandler;
-        _pipelines = pipelines;
+        _requestHandler = serviceProvider.GetRequiredService<IRequestHandler<TRequest, TResponse>>();
+        _pipelines = serviceProvider.GetRequiredService<IEnumerable<IRequestPipeline<TRequest, TResponse>>>();
     }
 
     public async Task<object?> Handle(object request)
@@ -34,17 +34,16 @@ internal class RequestHandlerWrapper<TRequest, TResponse> : IRequestHandlerWrapp
     }
 }
 
-internal class RequestHandlerWrapper<TRequest> : IRequestHandlerWrapper
+public class RequestHandlerWrapper<TRequest> : IRequestHandlerWrapper
     where TRequest : IRequest
 {
     private readonly IRequestHandler<TRequest> _requestHandler;
     private readonly IEnumerable<IRequestPipeline<TRequest, Unit>> _pipelines;
 
-    public RequestHandlerWrapper(IRequestHandler<TRequest> requestHandler,
-        IEnumerable<IRequestPipeline<TRequest, Unit>> pipelines)
+    public RequestHandlerWrapper(IServiceProvider serviceProvider)
     {
-        _requestHandler = requestHandler;
-        _pipelines = pipelines;
+        _requestHandler = serviceProvider.GetRequiredService<IRequestHandler<TRequest>>();
+        _pipelines = serviceProvider.GetRequiredService<IEnumerable<IRequestPipeline<TRequest, Unit>>>();
     }
 
     public async Task<object?> Handle(object request)

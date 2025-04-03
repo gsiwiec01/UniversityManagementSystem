@@ -2,16 +2,15 @@
 
 namespace UMS.BuildingBlocks.Infrastructure.Messaging;
 
-internal interface IRequestHandlerWrapperBase
+public interface IRequestHandlerWrapperBase
 {
     Task<object?> Handle(object request);
 }
 
-internal interface IRequestHandlerWrapper : IRequestHandlerWrapperBase
+public interface IRequestHandlerWrapper : IRequestHandlerWrapperBase
 {
     Task Handle(IRequest request);
 }
-
 
 internal interface IRequestHandlerWrapper<TResponse> : IRequestHandlerWrapperBase
 {

@@ -1,9 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using UMS.BuildingBlocks.Application.Messaging;
 using UMS.BuildingBlocks.Application.Messaging.Requests;
 using UMS.BuildingBlocks.Infrastructure.Messaging;
 
-namespace UMS.BuildingBlocks.Tests;
+namespace UMS.BuildingBlocks.Tests.Infrastructure.Messaging;
 
 public class MediatorTests
 {
@@ -23,11 +22,12 @@ public class MediatorTests
     public async Task Should_Call_Handler()
     {
         var serviceCollection = new ServiceCollection();
+        
         var handler = new TestRequestHandler();
         serviceCollection.AddSingleton<IRequestHandler<TestRequest>>(handler);
-        serviceCollection.AddTransient<RequestHandlerWrapper<TestRequest>>();
         
         var serviceProvider = serviceCollection.BuildServiceProvider();
+        
         var mediator = new Mediator(serviceProvider);
         var request = new TestRequest();
         
@@ -44,6 +44,7 @@ public class MediatorTests
         serviceCollection.AddTransient<RequestHandlerWrapper<TestRequestWithResponse, bool>>();
         
         var serviceProvider = serviceCollection.BuildServiceProvider();
+        
         var mediator = new Mediator(serviceProvider);
         var request = new TestRequestWithResponse();
         
