@@ -4,6 +4,7 @@
     <Project Path="UMS.BuildingBlocks.Application\UMS.BuildingBlocks.Application.csproj" Type="Classic C#" />
     <Project Path="UMS.BuildingBlocks.Domain\UMS.BuildingBlocks.Domain.csproj" Type="Classic C#" />
     <Project Path="UMS.BuildingBlocks.Infrastructure\UMS.BuildingBlocks.Infrastructure.csproj" Type="Classic C#" />
+    <Project Path="UMS.BuildingBlocks.Tests\UMS.BuildingBlocks.Tests.csproj" Type="Classic C#" />
   </Folder>
   <Folder Name="/Modules/" />
 </Solution>

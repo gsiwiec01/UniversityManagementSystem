@@ -7,6 +7,12 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>UMS.BuildingBlocks.Tests</_Parameter1>
+        </AssemblyAttribute>
+    </ItemGroup>
+    
+    <ItemGroup>
       <ProjectReference Include="..\UMS.BuildingBlocks.Application\UMS.BuildingBlocks.Application.csproj" />
     </ItemGroup>
 
