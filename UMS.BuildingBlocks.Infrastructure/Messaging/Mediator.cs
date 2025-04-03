@@ -23,14 +23,13 @@ internal class Mediator : IMediator
         return handlerWrapper.Handle(request);
     }
     
-    public async Task<TResponse> Send<TResponse>(IRequest<TResponse> request)
+    public Task<TResponse> Send<TResponse>(IRequest<TResponse> request)
     {
         var handlerWrapperType = typeof(RequestHandlerWrapper<,>).MakeGenericType(request.GetType(), typeof(TResponse));
         var handlerWrapper = (IRequestHandlerWrapper<TResponse>?) _serviceProvider.GetService(handlerWrapperType);
         if (handlerWrapper is null)
             throw new InvalidOperationException($"Handler for {request.GetType()} not found.");
 
-        var result = await handlerWrapper.Handle(request);
-        return result;
+        return handlerWrapper.Handle(request);
     }
 }
