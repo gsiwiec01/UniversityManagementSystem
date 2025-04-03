@@ -4,9 +4,6 @@ namespace UMS.BuildingBlocks.Application.Messaging;
 
 public interface IMediator
 {
-    Task Send<TRequest>(TRequest command) 
-        where TRequest : IRequest;
-    
-    Task<TResponse> Send<TRequest, TResponse>(TRequest request) 
-        where TRequest : IRequest<TResponse>;
+    Task Send(IRequest request);
+    Task<TResponse> Send<TResponse>(IRequest<TResponse> request);
 }

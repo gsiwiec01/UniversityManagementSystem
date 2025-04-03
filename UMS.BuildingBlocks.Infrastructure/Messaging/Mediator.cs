@@ -13,43 +13,24 @@ internal class Mediator : IMediator
         _serviceProvider = serviceProvider;
     }
 
-    public Task Send<TRequest>(TRequest request) where TRequest : IRequest
+    public Task Send(IRequest request)
     {
-        var handler = _serviceProvider.GetService<IRequestHandler<IRequest>>();
-        if (handler is null)
+        var handlerWrapperType = typeof(RequestHandlerWrapper<>).MakeGenericType(request.GetType());
+        var handlerWrapper = (IRequestHandlerWrapper?) _serviceProvider.GetService(handlerWrapperType);
+        if (handlerWrapper is null)
             throw new InvalidOperationException($"Handler for {request.GetType()} not found.");
 
-        var processors = _serviceProvider.GetRequiredService<IEnumerable<IRequestPipeline<TRequest, Unit>>>();
-        var resultHandler = processors
-            .Reverse()
-            .Aggregate(
-                Handler,
-                (next, processor) => () => processor.Process(request, next)
-            );
-
-        return resultHandler();
-
-        async Task<Unit> Handler()
-        {
-            await handler.Handle(request);
-            return new Unit();
-        }
+        return handlerWrapper.Handle(request);
     }
-
-    public Task<TResponse> Send<TRequest, TResponse>(TRequest request) where TRequest : IRequest<TResponse>
+    
+    public async Task<TResponse> Send<TResponse>(IRequest<TResponse> request)
     {
-        var handler = _serviceProvider.GetService<IRequestHandler<IRequest<TResponse>, TResponse>>();
-        if (handler is null)
+        var handlerWrapperType = typeof(RequestHandlerWrapper<,>).MakeGenericType(request.GetType(), typeof(TResponse));
+        var handlerWrapper = (IRequestHandlerWrapper<TResponse>?) _serviceProvider.GetService(handlerWrapperType);
+        if (handlerWrapper is null)
             throw new InvalidOperationException($"Handler for {request.GetType()} not found.");
-        
-        var processors = _serviceProvider.GetRequiredService<IEnumerable<IRequestPipeline<TRequest, TResponse>>>();
-        var resultHandler = processors
-            .Reverse()
-            .Aggregate(
-                () => handler.Handle(request),
-                (next, processor) => () => processor.Process(request, next)
-            );
 
-        return resultHandler();
+        var result = await handlerWrapper.Handle(request);
+        return result;
     }
 }
