@@ -53,6 +53,29 @@ public class MediatorTests
         Assert.True(result);
     }
     
+    [Fact]
+    public async Task Should_Invoke_Pipeline()
+    {
+        var serviceCollection = new ServiceCollection();
+
+        var handler = new TestRequestWithResponseHandler();
+        var pipeline = new TestPipeline<TestRequestWithResponse, bool>();
+
+        serviceCollection.AddSingleton<IRequestHandler<TestRequestWithResponse, bool>>(handler);
+        serviceCollection.AddSingleton<IRequestPipeline<TestRequestWithResponse, bool>>(pipeline);
+        serviceCollection.AddTransient<RequestHandlerWrapper<TestRequestWithResponse, bool>>();
+
+        var serviceProvider = serviceCollection.BuildServiceProvider();
+        var mediator = new Mediator(serviceProvider);
+
+        var request = new TestRequestWithResponse();
+
+        var result = await mediator.Send(request);
+
+        Assert.True(result);
+        Assert.True(pipeline.Handled);
+    }
+    
     private class TestRequest : IRequest;
     private class TestRequestHandler : IRequestHandler<TestRequest>
     {
@@ -71,6 +94,19 @@ public class MediatorTests
         public Task<bool> Handle(TestRequestWithResponse request)
         {
             return Task.FromResult(true);
+        }
+    }
+    
+    private class TestPipeline<TRequest, TResponse> : IRequestPipeline<TRequest, TResponse> 
+        where TRequest : notnull
+    {
+        public bool Handled { get; private set; } = false;
+        
+        public async Task<TResponse> Process(TRequest request, Func<Task<TResponse>> next)
+        {
+            Handled = true;
+            var result = await next();
+            return result;
         }
     }
 }
