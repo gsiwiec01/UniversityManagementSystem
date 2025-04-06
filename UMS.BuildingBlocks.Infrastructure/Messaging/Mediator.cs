@@ -18,31 +18,31 @@ public class Mediator : IMediator
 
     public Task Send(IRequest request)
     {
-        var handler = RequestHandlers.GetOrAdd(request.GetType(), type =>
+        var handler = (IRequestHandlerWrapper) RequestHandlers.GetOrAdd(request.GetType(), static type =>
         {
             var handlerWrapperType = typeof(RequestHandlerWrapper<>).MakeGenericType(type);
-            var handlerWrapper = Activator.CreateInstance(handlerWrapperType, _serviceProvider);
+            var handlerWrapper = Activator.CreateInstance(handlerWrapperType);
             if (handlerWrapper is null)
                 throw new InvalidOperationException($"Handler for {type} not found.");
-
+        
             return (IRequestHandlerWrapperBase) handlerWrapper;
         });
         
-        return handler.Handle(request);
+        return handler.Handle(request, _serviceProvider);
     }
 
     public Task<TResponse> Send<TResponse>(IRequest<TResponse> request)
     {
-        var handler = (IRequestHandlerWrapper<TResponse>) RequestHandlers.GetOrAdd(request.GetType(), type =>
+        var handler = (IRequestHandlerWrapper<TResponse>) RequestHandlers.GetOrAdd(request.GetType(), static type =>
         {
             var handlerWrapperType = typeof(RequestHandlerWrapper<,>).MakeGenericType(type, typeof(TResponse));
-            var handlerWrapper = Activator.CreateInstance(handlerWrapperType, _serviceProvider);
+            var handlerWrapper = Activator.CreateInstance(handlerWrapperType);
             if (handlerWrapper is null)
                 throw new InvalidOperationException($"Handler for {type} not found.");
 
             return (IRequestHandlerWrapperBase) handlerWrapper;
         });
         
-        return handler.Handle(request);
+        return handler.Handle(request, _serviceProvider);
     }
 }

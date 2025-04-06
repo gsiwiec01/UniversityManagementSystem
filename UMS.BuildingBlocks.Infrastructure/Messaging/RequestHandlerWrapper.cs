@@ -7,26 +7,20 @@ namespace UMS.BuildingBlocks.Infrastructure.Messaging;
 internal class RequestHandlerWrapper<TRequest, TResponse> : IRequestHandlerWrapper<TResponse>
     where TRequest : IRequest<TResponse>
 {
-    private readonly IRequestHandler<TRequest, TResponse> _requestHandler;
-    private readonly IEnumerable<IRequestPipeline<TRequest, TResponse>> _pipelines;
-    
-    public RequestHandlerWrapper(IServiceProvider serviceProvider)
+    public async Task<object?> Handle(object request, IServiceProvider serviceProvider)
     {
-        _requestHandler = serviceProvider.GetRequiredService<IRequestHandler<TRequest, TResponse>>();
-        _pipelines = serviceProvider.GetRequiredService<IEnumerable<IRequestPipeline<TRequest, TResponse>>>();
+        return await Handle((TRequest) request, serviceProvider);
     }
 
-    public async Task<object?> Handle(object request)
+    public Task<TResponse> Handle(IRequest<TResponse> request, IServiceProvider serviceProvider)
     {
-        return await Handle((TRequest) request);
-    }
-
-    public Task<TResponse> Handle(IRequest<TResponse> request)
-    {
-        var handler = _pipelines
+        var requestHandler = serviceProvider.GetRequiredService<IRequestHandler<TRequest, TResponse>>();
+        var pipelines = serviceProvider.GetRequiredService<IEnumerable<IRequestPipeline<TRequest, TResponse>>>();
+        
+        var handler = pipelines
             .Reverse()
             .Aggregate(
-                () => _requestHandler.Handle((TRequest) request),
+                () => requestHandler.Handle((TRequest) request),
                 (next, pipeline) => () => pipeline.Process((TRequest) request, next)
             )();
 
@@ -37,24 +31,18 @@ internal class RequestHandlerWrapper<TRequest, TResponse> : IRequestHandlerWrapp
 public class RequestHandlerWrapper<TRequest> : IRequestHandlerWrapper
     where TRequest : IRequest
 {
-    private readonly IRequestHandler<TRequest> _requestHandler;
-    private readonly IEnumerable<IRequestPipeline<TRequest, Unit>> _pipelines;
-
-    public RequestHandlerWrapper(IServiceProvider serviceProvider)
+    public async Task<object?> Handle(object request, IServiceProvider serviceProvider)
     {
-        _requestHandler = serviceProvider.GetRequiredService<IRequestHandler<TRequest>>();
-        _pipelines = serviceProvider.GetRequiredService<IEnumerable<IRequestPipeline<TRequest, Unit>>>();
+        await Handle((TRequest) request, serviceProvider);
+        return Unit.Value;
     }
 
-    public async Task<object?> Handle(object request)
+    public Task Handle(IRequest request, IServiceProvider serviceProvider)
     {
-        await Handle((TRequest) request);
-        return new Unit();
-    }
-
-    public Task Handle(IRequest request)
-    {
-        return _pipelines
+        var requestHandler = serviceProvider.GetRequiredService<IRequestHandler<TRequest>>();
+        var pipelines = serviceProvider.GetRequiredService<IEnumerable<IRequestPipeline<TRequest, Unit>>>();
+        
+        return pipelines
             .Reverse()
             .Aggregate(
                 Handler,
@@ -63,8 +51,8 @@ public class RequestHandlerWrapper<TRequest> : IRequestHandlerWrapper
 
         async Task<Unit> Handler()
         {
-            await _requestHandler.Handle((TRequest) request);
-            return new Unit();
+            await requestHandler.Handle((TRequest) request);
+            return Unit.Value;
         }
     }
 }

@@ -4,15 +4,15 @@ namespace UMS.BuildingBlocks.Infrastructure.Messaging;
 
 public interface IRequestHandlerWrapperBase
 {
-    Task<object?> Handle(object request);
+    Task<object?> Handle(object request, IServiceProvider serviceProvider);
 }
 
 public interface IRequestHandlerWrapper : IRequestHandlerWrapperBase
 {
-    Task Handle(IRequest request);
+    Task Handle(IRequest request, IServiceProvider serviceProvider);
 }
 
 internal interface IRequestHandlerWrapper<TResponse> : IRequestHandlerWrapperBase
 {
-    Task<TResponse> Handle(IRequest<TResponse> request);
+    Task<TResponse> Handle(IRequest<TResponse> request, IServiceProvider serviceProvider);
 }
