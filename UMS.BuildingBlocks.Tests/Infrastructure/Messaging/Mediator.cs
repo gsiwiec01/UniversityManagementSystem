@@ -75,7 +75,37 @@ public class MediatorTests
         Assert.True(result);
         Assert.True(pipeline.Handled);
     }
-    
+
+
+    [Fact]
+    public async Task Should_Invoke_Pipeline_And_Handler_In_Correct_Order()
+    {
+        var serviceCollection = new ServiceCollection();
+        var log = new List<string>();
+
+        serviceCollection.AddSingleton(log);
+        serviceCollection.AddSingleton(typeof(IRequestPipeline<,>), typeof(TestPipeline1<,>));
+        serviceCollection.AddSingleton(typeof(IRequestPipeline<,>), typeof(TestPipeline2<,>));
+        serviceCollection.AddTransient<IRequestHandler<TestPipelineRequest>, TestPipelineRequestHandler>();
+        
+        var serviceProvider = serviceCollection.BuildServiceProvider();
+        var mediator = new Mediator(serviceProvider);
+
+        var request = new TestPipelineRequest();
+        await mediator.Send(request);
+        
+        var expectedOrder = new List<string>
+        {
+            "Pipeline1-Before",
+            "Pipeline2-Before",
+            "Handler",
+            "Pipeline2-After",
+            "Pipeline1-After"
+        };
+        
+        Assert.Equal(expectedOrder, log);
+    }
+
     private class TestRequest : IRequest;
     private class TestRequestHandler : IRequestHandler<TestRequest>
     {
@@ -109,4 +139,50 @@ public class MediatorTests
             return result;
         }
     }
+    
+    
+    private class TestPipeline1<TRequest, TResponse> : IRequestPipeline<TRequest, TResponse> 
+        where TRequest : notnull
+    {
+        private readonly List<string> _log;
+        public TestPipeline1(List<string> log) => _log = log;
+        
+        public async Task<TResponse> Process(TRequest request, Func<Task<TResponse>> next)
+        {
+            _log.Add("Pipeline1-Before");
+            var result = await next();
+            _log.Add("Pipeline1-After");
+            return result;
+        }
+    }
+    
+    private class TestPipeline2<TRequest, TResponse> : IRequestPipeline<TRequest, TResponse> 
+        where TRequest : notnull
+    {
+        private readonly List<string> _log;
+        public TestPipeline2(List<string> log) => _log = log;
+        
+        public async Task<TResponse> Process(TRequest request, Func<Task<TResponse>> next)
+        {
+            _log.Add("Pipeline2-Before");
+            var result = await next();
+            _log.Add("Pipeline2-After");
+            return result;
+        }
+    }
+
+
+    private class TestPipelineRequest : IRequest;
+    private class TestPipelineRequestHandler : IRequestHandler<TestPipelineRequest>
+    {
+        private readonly List<string> _log;
+        public TestPipelineRequestHandler(List<string> log) => _log = log;
+        
+        public Task Handle(TestPipelineRequest request)
+        {
+            _log.Add("Handler");
+            return Task.CompletedTask;
+        }
+    }
+    
 }
